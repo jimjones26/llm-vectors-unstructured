@@ -1,14 +1,14 @@
 import os
 from dotenv import load_dotenv
-load_dotenv()
+from google import genai
 
-from openai import OpenAI
+load_dotenv(override=True)
 
-llm = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
 
-response = llm.embeddings.create(
-        input="Text to create embeddings for",
-        model="text-embedding-ada-002"
-    )
+client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
 
-print(response.data[0].embedding)
+result = client.models.embed_content(
+    model="gemini-embedding-exp-03-07", contents="What is the meaning of life?"
+)
+
+print(result.embeddings)
