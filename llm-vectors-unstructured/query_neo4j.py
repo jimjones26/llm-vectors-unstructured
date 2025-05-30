@@ -1,23 +1,41 @@
 import os
 from dotenv import load_dotenv
-load_dotenv()
+from google import genai
+from langchain_neo4j import Neo4jGraph
 
-from openai import OpenAI
+load_dotenv(override=True)
 
-llm = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
 
-response = llm.embeddings.create(
-        input="What does Hallucination mean?",
-        model="text-embedding-ada-002"
-    )
+response = client.models.embed_content(
+    model="gemini-embedding-exp-03-07", contents="What is the meaning of life?"
+)
 
-embedding = response.data[0].embedding
+embedding = (
+    response.embeddings[0].values
+    if response.embeddings and len(response.embeddings) > 0
+    else None
+)
+
+print(embedding)
 
 # Connect to Neo4j
-# graph = 
+graph = Neo4jGraph(
+    url=os.getenv("NEO4J_URI"),
+    username=os.getenv("NEO4J_USERNAME"),
+    password=os.getenv("NEO4J_PASSWORD"),
+)
 
 # Run query
-# result = 
+result = graph.query(
+    """
+CALL db.index.vector.queryNodes('chunkVector', 6, $embedding)
+YIELD node, score
+RETURN node.text, score
+""",
+    {"embedding": embedding},
+)
 
 # Display results
-# for row ... 
+for row in result:
+    print(row["node.text"], row["score"])
