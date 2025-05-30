@@ -8,3 +8,4 @@ langchain-neo4j==0.1.1
 neo4j==5.27.0
 textblob==0.18.0.post0
 nltk==3.8.1
+google-genai
