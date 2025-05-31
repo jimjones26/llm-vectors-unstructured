@@ -8,7 +8,7 @@ load_dotenv(override=True)
 client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
 
 response = client.models.embed_content(
-    model="gemini-embedding-exp-03-07", contents="What is the meaning of life?"
+    model="models/embedding-001", contents="What does Hallucination mean?"
 )
 
 embedding = (
