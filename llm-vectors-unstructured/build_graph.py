@@ -4,6 +4,7 @@ from langchain_community.document_loaders import DirectoryLoader, TextLoader
 from langchain.text_splitter import CharacterTextSplitter
 from google import genai
 from neo4j import GraphDatabase
+from textblob import TextBlob
 
 load_dotenv(override=True)
 
@@ -47,6 +48,7 @@ def get_course_data(llm, chunk):
     )
     data["text"] = chunk.page_content
     data["embedding"] = get_embedding(llm, data["text"])
+    data["topics"] = TextBlob(data["text"]).noun_phrases
 
     return data
 
@@ -60,6 +62,11 @@ def create_chunk(tx, data):
         MERGE (l)-[:CONTAINS]->(p:Paragraph{text: $text})
         WITH p
         CALL db.create.setNodeVectorProperty(p, "embedding", $embedding)
+           
+        FOREACH (topic in $topics |
+            MERGE (t:Topic {name: topic})
+            MERGE (p)-[:MENTIONS]->(t)
+        )
         """,
         data,
     )
