@@ -11,7 +11,9 @@ load_dotenv(override=True)
 COURSES_PATH = "./data/asciidoc"
 
 loader = DirectoryLoader(COURSES_PATH, glob="**/lesson.adoc", loader_cls=TextLoader)
+print("Loading documents...")
 docs = loader.load()
+print(f"Loaded {len(docs)} documents.")
 
 text_splitter = CharacterTextSplitter(
     separator="\n\n",
@@ -19,8 +21,9 @@ text_splitter = CharacterTextSplitter(
     chunk_overlap=200,
 )
 
+print("Splitting documents into chunks...")
 chunks = text_splitter.split_documents(docs)
-print("number of chunks: ", len(chunks))
+print("Number of chunks:", len(chunks))
 
 
 # Create a function to get the embedding
@@ -73,17 +76,27 @@ def create_chunk(tx, data):
 
 
 # Create Genai object
+print("Creating GenAI client...")
 llm = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
 
 # Connect to Neo4j
+print("Connecting to Neo4j...")
+neo4j_uri = os.getenv("NEO4J_URI")
+if not neo4j_uri:
+    raise ValueError("NEO4J_URI environment variable is not set.")
 driver = GraphDatabase.driver(
-    os.getenv("NEO4J_URI"),
+    neo4j_uri,
     auth=(os.getenv("NEO4J_USERNAME"), os.getenv("NEO4J_PASSWORD")),
 )
 driver.verify_connectivity()
+print("Connected to Neo4j.")
 
-for chunk in chunks:
+print("Processing chunks and writing to Neo4j...")
+for idx, chunk in enumerate(chunks, 1):
+    print(f"Processing chunk {idx}/{len(chunks)}...")
     with driver.session(database="neo4j") as session:
         session.execute_write(create_chunk, get_course_data(llm, chunk))
 
+print("All chunks processed. Closing Neo4j connection.")
 driver.close()
+print("Done.")
