@@ -59,8 +59,23 @@ driver = GraphDatabase.driver(
 )
 driver.verify_connectivity()
 
-# Create a function to run the Cypher query
 
-# Iterate through the chunks and create the graph
+def create_chunk(tx, data):
+    tx.run(
+        """
+        MERGE (c:Course {name: $course})
+        MERGE (c)-[:HAS_MODULE]->(m:Module{name: $module})
+        MERGE (m)-[:HAS_LESSON]->(l:Lesson{name: $lesson, url: $url})
+        MERGE (l)-[:CONTAINS]->(p:Paragraph{text: $text})
+        WITH p
+        CALL db.create.setNodeVectorProperty(p, "embedding", $embedding)
+        """,
+        data,
+    )
 
-# Close the neo4j driver
+
+for chunk in chunks:
+    with driver.session(database="neo4j") as session:
+        session.execute_write(create_chunk, get_course_data(llm, chunk))
+
+driver.close()
