@@ -49,9 +49,15 @@ def get_course_data(llm, chunk):
     data["embedding"] = get_embedding(llm, data["text"])
 
 
-# Create OpenAI object
+# Create Genai object
+llm = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
 
 # Connect to Neo4j
+driver = GraphDatabase.driver(
+    os.getenv("NEO4J_URI"),
+    auth=(os.getenv("NEO4J_USERNAME"), os.getenv("NEO4J_PASSWORD")),
+)
+driver.verify_connectivity()
 
 # Create a function to run the Cypher query
 
